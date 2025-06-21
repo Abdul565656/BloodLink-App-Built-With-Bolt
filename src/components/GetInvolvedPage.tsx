@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { notificationAgent } from '../lib/notificationAgent';
+import Footer from './Footer';
 
 interface VolunteerFormData {
   name: string;
@@ -730,6 +731,7 @@ export default function GetInvolvedPage() {
           </div>
         </section>
       </div>
+      <Footer />
     </div>
   );
 }

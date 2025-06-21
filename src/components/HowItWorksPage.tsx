@@ -20,6 +20,7 @@ import {
   Smartphone,
   Mail
 } from 'lucide-react';
+import Footer from './Footer';
 
 export default function HowItWorksPage() {
   const donorSteps = [
@@ -462,56 +463,7 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8 lg:py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center space-x-2 lg:space-x-3 mb-4">
-                <Heart className="h-6 lg:h-8 w-6 lg:w-8 text-red-600" />
-                <span className="text-xl lg:text-2xl font-bold">BloodLink</span>
-              </div>
-              <p className="text-gray-400 leading-relaxed max-w-md">
-                Connecting blood donors with those in need worldwide. 
-                Saving lives, one donation at a time.
-              </p>
-            </div>
-            
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
-              <ul className="space-y-2">
-                <li><Link to="/donate" className="text-gray-400 hover:text-white transition-colors">Become Donor</Link></li>
-                <li><Link to="/request" className="text-gray-400 hover:text-white transition-colors">Request Blood</Link></li>
-                <li><Link to="/" className="text-gray-400 hover:text-white transition-colors">Home</Link></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Contact</h3>
-              <ul className="space-y-3">
-                <li className="flex items-center space-x-2">
-                  <Phone className="h-4 w-4 text-red-600" />
-                  <span className="text-gray-400">+1 (555) 123-4567</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <Mail className="h-4 w-4 text-red-600" />
-                  <span className="text-gray-400">help@bloodlink.com</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <Globe className="h-4 w-4 text-red-600" />
-                  <span className="text-gray-400">Available Worldwide</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="border-t border-gray-800 pt-8 mt-8 lg:mt-12 text-center">
-            <p className="text-gray-400">
-              © 2025 BloodLink. All rights reserved. Built for saving lives globally.
-            </p>
-          </div>
-        </div>
-      </footer>
+     <Footer />
     </div>
   );
 }
