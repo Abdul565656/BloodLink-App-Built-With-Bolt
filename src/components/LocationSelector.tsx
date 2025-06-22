@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import Select from 'react-select';
+import Select, { components, OptionProps, SingleValueProps } from 'react-select';
 import { Globe, MapPin } from 'lucide-react';
-import { countries, getCitiesForCountry, type Country } from '../lib/locationData';
+// Make sure this path is correct for your project structure
+import { countries, getCitiesForCountry } from '../lib/locationData'; 
 
 interface LocationSelectorProps {
   selectedCountry: string;
@@ -32,106 +33,122 @@ export default function LocationSelector({
   onCountryChange,
   onCityChange,
   errors = {},
-  required = false
+  required = false,
 }: LocationSelectorProps) {
   const [cityOptions, setCityOptions] = useState<CityOption[]>([]);
   const [isLoadingCities, setIsLoadingCities] = useState(false);
 
-  // Prepare country options
-  const countryOptions: CountryOption[] = countries.map(country => ({
+  // Prepare country options for the Select component
+  const countryOptions: CountryOption[] = countries.map((country) => ({
     value: country.code,
     label: country.name,
-    flag: country.flag
+    flag: country.flag,
   }));
 
-  // Update cities when country changes
+  // Simplified and more robust effect to update cities when the country changes
   useEffect(() => {
     if (selectedCountry) {
       setIsLoadingCities(true);
       const cities = getCitiesForCountry(selectedCountry);
-      const options = cities.map(city => ({
+      const options = cities.map((city) => ({
         value: city,
-        label: city
+        label: city,
       }));
       setCityOptions(options);
-      setIsLoadingCities(false);
       
-      // Clear city selection if it's not valid for the new country
+      // Reset city selection if the current one isn't in the new list
       if (selectedCity && !cities.includes(selectedCity)) {
         onCityChange('');
       }
+      setIsLoadingCities(false);
     } else {
+      // Clear cities and reset selection if no country is selected
       setCityOptions([]);
       onCityChange('');
     }
-  }, [selectedCountry, selectedCity, onCityChange]);
+    // This effect should ONLY run when the selectedCountry changes.
+  }, [selectedCountry]);
 
-  // Custom option component for countries (with flags)
-  const CountryOption = ({ data, ...props }: any) => (
-    <div {...props} className="flex items-center space-x-3 p-2 hover:bg-gray-50 cursor-pointer">
-      <span className="text-lg">{data.flag}</span>
-      <span className="text-gray-900">{data.label}</span>
+  // --- CRITICAL FIX 1: Custom components with correct props handling ---
+  const CustomCountryOption = (props: OptionProps<CountryOption, false>) => {
+    // We use components.Option to get the default accessibility and event handlers
+    return (
+      <components.Option {...props}>
+        <div className="flex items-center space-x-3">
+          <span className="text-lg">{props.data.flag}</span>
+          <span>{props.data.label}</span>
+        </div>
+      </components.Option>
+    );
+  };
+  
+  const CustomCountrySingleValue = (props: SingleValueProps<CountryOption>) => (
+    <div {...props.innerProps} className="flex items-center space-x-2">
+      <span className="text-lg">{props.data.flag}</span>
+      <span>{props.data.label}</span>
     </div>
   );
 
-  // Custom single value component for countries
-  const CountrySingleValue = ({ data, ...props }: any) => (
-    <div {...props} className="flex items-center space-x-2">
-      <span className="text-lg">{data.flag}</span>
-      <span className="text-gray-900">{data.label}</span>
-    </div>
-  );
 
-  const customSelectStyles = {
+  // --- CRITICAL FIX 2: Custom styles with explicit z-index ---
+  const getCustomSelectStyles = (hasError: boolean) => ({
     control: (provided: any, state: any) => ({
       ...provided,
       minHeight: '48px',
-      borderColor: errors.country || errors.city ? '#ef4444' : state.isFocused ? '#ef4444' : '#d1d5db',
+      borderColor: hasError ? '#f87171' : state.isFocused ? '#ef4444' : '#d1d5db',
+      backgroundColor: hasError ? '#fef2f2' : 'white',
       borderWidth: '1px',
-      borderRadius: '8px',
+      borderRadius: '0.75rem', // 12px for rounded-xl consistency
       boxShadow: state.isFocused ? '0 0 0 2px rgba(239, 68, 68, 0.2)' : 'none',
       '&:hover': {
-        borderColor: '#ef4444'
-      }
+        borderColor: hasError ? '#ef4444' : '#9ca3af',
+      },
+      transition: 'border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out'
     }),
     option: (provided: any, state: any) => ({
       ...provided,
       backgroundColor: state.isSelected ? '#ef4444' : state.isFocused ? '#fef2f2' : 'white',
       color: state.isSelected ? 'white' : '#374151',
-      padding: '8px 12px',
-      cursor: 'pointer'
+      padding: '10px 12px',
+      cursor: 'pointer',
+    }),
+    menu: (provided: any) => ({
+      ...provided,
+      // This is crucial for preventing the menu from being hidden
+      zIndex: 50, 
+      borderRadius: '0.75rem',
+      overflow: 'hidden',
     }),
     placeholder: (provided: any) => ({
       ...provided,
-      color: '#9ca3af'
+      color: '#9ca3af',
     }),
-    singleValue: (provided: any) => ({
-      ...provided,
-      color: '#374151'
-    })
-  };
+  });
 
   return (
     <div className="space-y-6">
       {/* Country Selector */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-2">
+        <label htmlFor="country-select" className="block text-sm font-semibold text-gray-700 mb-2">
           <Globe className="h-4 w-4 inline mr-2" />
           Country {required && '*'}
         </label>
         <Select
+          inputId="country-select"
           options={countryOptions}
           value={countryOptions.find(option => option.value === selectedCountry) || null}
           onChange={(option) => onCountryChange(option?.value || '')}
           placeholder="Select your country..."
           isSearchable
           isClearable
-          styles={customSelectStyles}
+          // --- CRITICAL FIX 3: Menu positioning fixes ---
+          menuPosition="absolute"
+          menuPlacement="auto"
+          styles={getCustomSelectStyles(!!errors.country)}
           components={{
-            Option: CountryOption,
-            SingleValue: CountrySingleValue
+            Option: CustomCountryOption,
+            SingleValue: CustomCountrySingleValue,
           }}
-          className={errors.country ? 'border-red-300' : ''}
         />
         {errors.country && (
           <p className="mt-1 text-sm text-red-600">{errors.country}</p>
@@ -140,35 +157,32 @@ export default function LocationSelector({
 
       {/* City Selector */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-2">
+        <label htmlFor="city-select" className="block text-sm font-semibold text-gray-700 mb-2">
           <MapPin className="h-4 w-4 inline mr-2" />
           City {required && '*'}
         </label>
         <Select
+          inputId="city-select"
           options={cityOptions}
           value={cityOptions.find(option => option.value === selectedCity) || null}
           onChange={(option) => onCityChange(option?.value || '')}
-          placeholder={selectedCountry ? "Select your city..." : "Please select a country first"}
+          placeholder={selectedCountry ? "Select your city..." : "Select a country first"}
           isSearchable
           isClearable
-          isDisabled={!selectedCountry}
+          isDisabled={!selectedCountry || cityOptions.length === 0}
           isLoading={isLoadingCities}
-          styles={customSelectStyles}
-          className={errors.city ? 'border-red-300' : ''}
-          noOptionsMessage={() => selectedCountry ? "No cities found" : "Please select a country first"}
+          // --- CRITICAL FIX 3 (Applied here too) ---
+          menuPosition="absolute"
+          menuPlacement="auto"
+          styles={getCustomSelectStyles(!!errors.city)}
+          noOptionsMessage={() => selectedCountry ? "No cities found for this country" : "Please select a country first"}
         />
         {errors.city && (
           <p className="mt-1 text-sm text-red-600">{errors.city}</p>
         )}
-        
-        {selectedCountry && cityOptions.length === 0 && !isLoadingCities && (
-          <p className="mt-1 text-sm text-gray-500">
-            No cities available for this country. Please contact support to add your city.
-          </p>
-        )}
       </div>
 
-      {/* Location Preview */}
+      {/* Location Preview (No changes needed here) */}
       {selectedCountry && selectedCity && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="flex items-center space-x-2">
